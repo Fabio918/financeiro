@@ -13,12 +13,6 @@
 
   <!-- Caixa atual -->
   <div class="bg-white shadow-lg rounded-xl p-4 w-full max-w-md flex flex-col items-center mb-4">
-    <div class="w-full mb-2">
-      <label class="block text-sm text-gray-700 font-medium mb-1">Saldo Inicial do Mês (R$)</label>
-      <input type="number" id="saldoInicialInput" step="0.01" value="0"
-             class="w-full rounded-md border border-gray-400 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
-    </div>
-
     <button id="toggleCaixa" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition mb-2">
       👁 Ver Caixa
     </button>
@@ -47,6 +41,12 @@
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
         <input type="text" id="category" required placeholder="ex: gasolina, lazer..."
+               class="block w-full rounded-md border border-gray-400 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+        <input type="date" id="date" required
                class="block w-full rounded-md border border-gray-400 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
       </div>
 
@@ -80,7 +80,6 @@
     const caixaValor = document.getElementById('caixaValor');
     const toggleBtn = document.getElementById('toggleCaixa');
     const percentEl = document.getElementById('percentGasto');
-    const saldoInicialInput = document.getElementById('saldoInicialInput');
 
     let registros = [];
     const coresCategoria = {};
@@ -125,19 +124,26 @@
 
     function atualizarHistorico() {
       historyEl.innerHTML = '';
-      registros.forEach((r, i) => {
+
+      const registrosOrdenados = [...registros].sort((a, b) => new Date(b.data) - new Date(a.data));
+
+      registrosOrdenados.forEach((r) => {
+        const i = registros.indexOf(r); // Índice real para excluir corretamente
         const li = document.createElement('li');
-        li.className = "flex justify-between bg-gray-100 p-2 rounded";
+        li.className = "flex flex-col bg-gray-100 p-2 rounded";
         li.innerHTML = `
-          <span>${r.tipo === 'entrada' ? '🔵' : '🔴'} <strong>${r.categoria}</strong>: R$ ${r.valor.toFixed(2)}</span>
-          <button class="text-red-500" onclick="remover(${i})">Excluir</button>
+          <div class="flex justify-between">
+            <span>${r.tipo === 'entrada' ? '🔵' : '🔴'} <strong>${r.categoria}</strong>: R$ ${r.valor.toFixed(2)}</span>
+            <button class="text-red-500" onclick="remover(${i})">Excluir</button>
+          </div>
+          <div class="text-sm text-gray-500">📅 ${r.data}</div>
         `;
         historyEl.appendChild(li);
       });
     }
 
     function calcularCaixa() {
-      let saldo = parseFloat(saldoInicialInput.value) || 0;
+      let saldo = 0;
       registros.forEach(r => {
         if (r.tipo === 'entrada') saldo += r.valor;
         else saldo -= r.valor;
@@ -179,8 +185,13 @@
       const tipo = form.type.value;
       const valor = parseFloat(form.amount.value);
       const categoria = form.category.value.trim();
-      if (!categoria || isNaN(valor) || valor <= 0) return alert('Preencha corretamente');
-      registros.push({ tipo, valor, categoria });
+      const data = form.date.value;
+
+      if (!categoria || isNaN(valor) || valor <= 0 || !data) {
+        return alert('Preencha corretamente');
+      }
+
+      registros.push({ tipo, valor, categoria, data });
       form.reset();
       atualizarTudo();
     });
@@ -189,8 +200,6 @@
       caixaValor.classList.toggle('hidden');
       toggleBtn.textContent = caixaValor.classList.contains('hidden') ? '👁 Ver Caixa' : '🙈 Ocultar Caixa';
     });
-
-    saldoInicialInput.addEventListener('input', calcularCaixa);
   </script>
 </body>
 </html>
