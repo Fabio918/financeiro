@@ -21,7 +21,9 @@
     <button id="toggleCaixa" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition mb-2">
       👁 Ver Caixa
     </button>
-    <div id="caixaValor" class="text-2xl font-semibold text-green-600 hidden">R$ 0,00</div>
+    <div id="caixaValor" class="text-2xl font-semibold text-green-600 hidden">
+      R$ 0,00
+    </div>
   </div>
 
   <!-- Formulário -->
@@ -70,6 +72,7 @@
     <p id="percentGasto" class="text-lg font-semibold text-purple-700">Gasto: 0%</p>
   </div>
 
+  <!-- SCRIPT -->
   <script>
     const form = document.getElementById('financeForm');
     const historyEl = document.getElementById('history');
@@ -79,10 +82,15 @@
     const percentEl = document.getElementById('percentGasto');
     const saldoInicialInput = document.getElementById('saldoInicialInput');
 
-    let registros = JSON.parse(localStorage.getItem('registros')) || [];
+    let registros = [];
     const coresCategoria = {};
-    let saldoInicial = parseFloat(localStorage.getItem('saldoInicial')) || 0;
-    saldoInicialInput.value = saldoInicial;
+
+    // Carregar dados salvos
+    const dadosSalvos = localStorage.getItem('registros');
+    if (dadosSalvos) registros = JSON.parse(dadosSalvos);
+
+    const saldoSalvo = localStorage.getItem('saldoInicial');
+    if (saldoSalvo) saldoInicialInput.value = parseFloat(saldoSalvo).toFixed(2);
 
     function gerarCorAleatoria() {
       let cor;
@@ -136,7 +144,7 @@
     }
 
     function calcularCaixa() {
-      let saldo = saldoInicial;
+      let saldo = parseFloat(saldoInicialInput.value) || 0;
       registros.forEach(r => {
         if (r.tipo === 'entrada') saldo += r.valor;
         else saldo -= r.valor;
@@ -170,21 +178,9 @@
 
     window.remover = i => {
       registros.splice(i, 1);
-      salvarDados();
+      localStorage.setItem('registros', JSON.stringify(registros));
       atualizarTudo();
     };
-
-    function salvarDados() {
-      localStorage.setItem('registros', JSON.stringify(registros));
-      localStorage.setItem('saldoInicial', saldoInicialInput.value);
-    }
-
-    function carregarDados() {
-      registros = JSON.parse(localStorage.getItem('registros')) || [];
-      saldoInicial = parseFloat(localStorage.getItem('saldoInicial')) || 0;
-      saldoInicialInput.value = saldoInicial;
-      atualizarTudo();
-    }
 
     form.addEventListener('submit', e => {
       e.preventDefault();
@@ -193,8 +189,8 @@
       const categoria = form.category.value.trim();
       if (!categoria || isNaN(valor) || valor <= 0) return alert('Preencha corretamente');
       registros.push({ tipo, valor, categoria });
+      localStorage.setItem('registros', JSON.stringify(registros));
       form.reset();
-      salvarDados();
       atualizarTudo();
     });
 
@@ -204,13 +200,11 @@
     });
 
     saldoInicialInput.addEventListener('input', () => {
-      saldoInicial = parseFloat(saldoInicialInput.value);
-      salvarDados();
+      localStorage.setItem('saldoInicial', saldoInicialInput.value);
       calcularCaixa();
     });
 
-    // Inicializa
-    carregarDados();
+    atualizarTudo();
   </script>
 </body>
 </html>
